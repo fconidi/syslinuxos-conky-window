@@ -6,7 +6,7 @@
 
 set -euo pipefail
 
-PKG_VERSION="0.2.0"
+PKG_VERSION="0.2.1"
 PKG_NAME="syslinuxos-conky-window"
 ARCH="all"
 
@@ -30,7 +30,7 @@ chmod 755 "$STAGING/opt/scripts/conky-window-start.sh" \
           "$STAGING/opt/scripts/conky-net.sh" \
           "$STAGING/opt/scripts/conky-syslinuxos.sh"
 chmod 644 "$STAGING/etc/conky/conky-window.conf"
-chmod 644 "$STAGING/usr/share/applications/"*.desktop
+chmod 644 "$STAGING/usr/share/applications/"*.desktop "$STAGING/usr/share/pixmaps/"*.png
 chmod 644 "$STAGING/usr/share/doc/$PKG_NAME/"*
 
 # --- 2. DEBIAN/control ---
@@ -44,6 +44,7 @@ Section: x11
 Priority: optional
 Architecture: $ARCH
 Depends: conky-all
+Recommends: lsb-release, curl, lm-sensors, x11-utils, x11-xserver-utils
 Replaces: conky-window (<< 0.2.0)
 Breaks: conky-window (<< 0.2.0)
 Maintainer: Franco Conidi (edmond) <fconidi@gmail.com>

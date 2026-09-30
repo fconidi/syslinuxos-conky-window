@@ -9,10 +9,14 @@ ok='${color 4d80df}'
 warn='${color ffaa00}'
 bad='${color ff4444}'
 
+# Section title: distribution ID from /etc/os-release, upper case
+distro=$(. /etc/os-release 2>/dev/null; printf '%s' "${ID:-}" | tr '[:lower:]' '[:upper:]')
+[ -n "$distro" ] || distro=SYSTEM
+
 updates=$(apt-get -s upgrade 2>/dev/null | grep -c '^Inst')
 failed=$(systemctl --failed --no-legend --plain 2>/dev/null | grep -c .)
 
-printf '${font sans-serif:bold:size=%s}SYSLINUXOS ${hr 2}\n${font sans-serif:normal:size=%s}' "$f12" "$f10"
+printf '${font sans-serif:bold:size=%s}%s ${hr 2}\n${font sans-serif:normal:size=%s}' "$f12" "$distro" "$f10"
 
 if [ "${updates:-0}" -gt 0 ]; then
     printf 'Updates: %s%s${color}' "$warn" "$updates"

@@ -4,5 +4,5 @@ Name=Conky-window-start
 Exec=/opt/scripts/conky-window-start.sh
 StartupNotify=false
 Terminal=false
-Icon=/usr/share/icons/logo-green-64.png
+Icon=/usr/share/pixmaps/syslinuxos-conky-window-start.png
 Categories=System;Monitor;
