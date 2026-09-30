@@ -115,7 +115,7 @@ fi
 
 # / and /home on the same filesystem (btrfs subvolumes) report identical usage:
 # show a single row.
-src_of() { findmnt -no SOURCE "$1" 2>/dev/null | sed 's/\[.*\]$//'; }
+src_of() { findmnt -no SOURCE -T "$1" 2>/dev/null | sed 's/\[.*\]$//'; }
 ROOT_SRC=$(src_of /)
 HOME_SRC=$(src_of /home)
 HOME_ROWS_FILE=$(mktemp)
@@ -129,10 +129,22 @@ ${if_match ${fs_used_perc /home}>80}${color ff4444}${else}${if_match ${fs_used_p
 HOMEEOF
 fi
 
+# CPU temperature row only when a numeric value is available (no sensors in
+# VMs/containers: the comparison would fail on every refresh).
+TEMP_ROW_FILE=$(mktemp)
+case "$(/opt/scripts/conky-hardware.sh cpu_temp 2>/dev/null)" in
+    ""|*[!0-9.]*) ;;
+    *)
+        cat > "$TEMP_ROW_FILE" <<'TEMPEOF'
+${if_match ${execi 3 /opt/scripts/conky-hardware.sh cpu_temp}>=85}${color ff4444}${else}${if_match ${execi 3 /opt/scripts/conky-hardware.sh cpu_temp}>=70}${color ffaa00}${else}${color 4d80df}${endif}${endif}Temp: ${alignr}${execi 3 /opt/scripts/conky-hardware.sh cpu_temp}°C${color}
+TEMPEOF
+        ;;
+esac
+
 # Step 1: inject CPU bars and TOP rows in place of placeholders
 awk -v bars="$CPU_BARS_FILE" -v top="$TOP_ROWS_FILE" \
     -v gpu="$GPU_ROW_FILE" -v fan="$FAN_ROW_FILE" \
-    -v home="$HOME_ROWS_FILE" '
+    -v home="$HOME_ROWS_FILE" -v temp="$TEMP_ROW_FILE" '
 /__CPU_BARS__/ {
     while ((getline line < bars) > 0) print line
     close(bars); next
@@ -149,13 +161,17 @@ awk -v bars="$CPU_BARS_FILE" -v top="$TOP_ROWS_FILE" \
     while ((getline line < fan) > 0) print line
     close(fan); next
 }
+/__TEMP_ROW__/ {
+    while ((getline line < temp) > 0) print line
+    close(temp); next
+}
 /__HOME_ROWS__/ {
     while ((getline line < home) > 0) print line
     close(home); next
 }
 { print }
 ' "$CONF_SRC" > "${CONF_TMP}.tmp"
-rm -f "$CPU_BARS_FILE" "$TOP_ROWS_FILE" "$GPU_ROW_FILE" "$FAN_ROW_FILE" "$HOME_ROWS_FILE"
+rm -f "$CPU_BARS_FILE" "$TOP_ROWS_FILE" "$GPU_ROW_FILE" "$FAN_ROW_FILE" "$HOME_ROWS_FILE" "$TEMP_ROW_FILE"
 
 # Step 2: apply scaling (placeholder trick avoids chained replacements)
 sed \
