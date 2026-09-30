@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Conky-window-stop
+Exec=/opt/scripts/conky-window-stop.sh
+StartupNotify=false
+Terminal=false
+Icon=/usr/share/icons/logo-red-64.png
+Categories=System;Monitor;
