@@ -1,13 +1,13 @@
 #!/bin/bash
-# Build conky-window.
+# Build syslinuxos-conky-window (renamed from conky-window in 0.2.0).
 #
-# Output: conky-window_<VERSION>_all.deb in this directory.
+# Output: syslinuxos-conky-window_<VERSION>_all.deb in this directory.
 # No sudo: fakeroot handles root permissions.
 
 set -euo pipefail
 
-PKG_VERSION="0.1.6"
-PKG_NAME="conky-window"
+PKG_VERSION="0.2.0"
+PKG_NAME="syslinuxos-conky-window"
 ARCH="all"
 
 WORKDIR="$(cd "$(dirname "$0")" && pwd)"
@@ -26,7 +26,9 @@ cp -a "$FILES_DIR"/* "$STAGING/"
 # --- 1b. Permissions ---
 chmod 755 "$STAGING/opt/scripts/conky-window-start.sh" \
           "$STAGING/opt/scripts/conky-window-stop.sh" \
-          "$STAGING/opt/scripts/conky-hardware.sh"
+          "$STAGING/opt/scripts/conky-hardware.sh" \
+          "$STAGING/opt/scripts/conky-net.sh" \
+          "$STAGING/opt/scripts/conky-syslinuxos.sh"
 chmod 644 "$STAGING/etc/conky/conky-window.conf"
 chmod 644 "$STAGING/usr/share/applications/"*.desktop
 chmod 644 "$STAGING/usr/share/doc/$PKG_NAME/"*
@@ -42,6 +44,8 @@ Section: x11
 Priority: optional
 Architecture: $ARCH
 Depends: conky-all
+Replaces: conky-window (<< 0.2.0)
+Breaks: conky-window (<< 0.2.0)
 Maintainer: Franco Conidi (edmond) <fconidi@gmail.com>
 Homepage: https://syslinuxos.com
 Installed-Size: $INSTALLED_SIZE
@@ -67,8 +71,15 @@ case "$1" in
     configure)
         # Divert conky.desktop from conky-all to avoid duplicate menu entry.
         # Our conky-window-start.desktop replaces it.
-        if ! dpkg-divert --list /usr/share/applications/conky.desktop 2>/dev/null | grep -q conky-window; then
+        # Migration from the old package name: take over its diversion.
+        if dpkg-divert --list /usr/share/applications/conky.desktop 2>/dev/null | grep -q ' by conky-window$'; then
             dpkg-divert --package conky-window \
+                --rename \
+                --remove /usr/share/applications/conky.desktop \
+                2>/dev/null || true
+        fi
+        if ! dpkg-divert --list /usr/share/applications/conky.desktop 2>/dev/null | grep -q ' by syslinuxos-conky-window$'; then
+            dpkg-divert --package syslinuxos-conky-window \
                 --rename \
                 --divert /usr/share/applications/conky.desktop.distrib \
                 /usr/share/applications/conky.desktop \
@@ -78,7 +89,7 @@ case "$1" in
             update-desktop-database -q /usr/share/applications >/dev/null 2>&1 || true
         fi
         echo
-        echo "conky-window: installation complete."
+        echo "syslinuxos-conky-window: installation complete."
         echo "  - Start: Menu > System > Monitor > Conky-window-start"
         echo "  - Stop:  Menu > System > Monitor > Conky-window-stop"
         ;;
@@ -126,8 +137,8 @@ set -e
 case "$1" in
     remove|purge)
         # Remove divert of conky.desktop (restore conky-all's file).
-        if dpkg-divert --list /usr/share/applications/conky.desktop 2>/dev/null | grep -q conky-window; then
-            dpkg-divert --package conky-window \
+        if dpkg-divert --list /usr/share/applications/conky.desktop 2>/dev/null | grep -q ' by syslinuxos-conky-window$'; then
+            dpkg-divert --package syslinuxos-conky-window \
                 --rename \
                 --remove /usr/share/applications/conky.desktop \
                 2>/dev/null || true

@@ -18,13 +18,13 @@ Shows system info, CPU (temperature, optional GPU/fan, per-core bars), top proce
 From the SysLinuxOS APT repository:
 
 ```
-sudo apt install conky-window
+sudo apt install syslinuxos-conky-window
 ```
 
 or from a release `.deb`:
 
 ```
-sudo apt install ./conky-window_<version>_all.deb
+sudo apt install ./syslinuxos-conky-window_<version>_all.deb
 ```
 
 Start and stop from **Menu > System > Monitor** (Conky-window-start / Conky-window-stop).
@@ -35,10 +35,14 @@ Start and stop from **Menu > System > Monitor** (Conky-window-start / Conky-wind
 bash build-deb.sh
 ```
 
-Produces `conky-window_<version>_all.deb` (no sudo, uses fakeroot).
+Produces `syslinuxos-conky-window_<version>_all.deb` (no sudo, uses fakeroot).
 
 ## Author / License
 
 **Franco Conidi** (aka *edmond*) — <fconidi@gmail.com> — <https://syslinuxos.com> — <https://francoconidi.it>
 
 GPL-3.0+, see `files/usr/share/doc/conky-window/copyright`.
+
+## Renamed from conky-window
+
+Since 0.2.0 the package is called `syslinuxos-conky-window`. The old name is kept as an empty transitional package, so `apt upgrade` migrates existing installs. Paths and script names (`/etc/conky/conky-window.conf`, `conky-window-start.sh`, `CONKY_WINDOW_SCALE`) are unchanged.
