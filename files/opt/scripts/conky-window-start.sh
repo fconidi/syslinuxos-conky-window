@@ -58,8 +58,6 @@ GW150=$(scale_val 150 75)
 GW180=$(scale_val 180 90)
 CBAR_H=$(scale_val 8 4)
 CBAR_W=$(scale_val 128 60)     # single-column bar width
-CBAR_W2=$(scale_val 88 42)     # two-column bar width (narrower)
-GOTO_MID=$(scale_val 155 78)   # goto pixel for column 2
 
 # Adaptive layout based on CPU count:
 #   <=6  → single column + TOP 3
@@ -74,6 +72,9 @@ else
 fi
 
 # Generate CPU bar lines
+#   <=6 threads : one column
+#   7-12        : two columns
+#   >12         : ceil(threads/8) columns (at most 8 rows), narrower bars
 CPU_BARS_FILE=$(mktemp)
 if [ "$NCPU" -le 6 ]; then
     for i in $(seq 1 "$NCPU"); do
@@ -81,17 +82,24 @@ if [ "$NCPU" -le 6 ]; then
             >> "$CPU_BARS_FILE"
     done
 else
-    HALF=$(( (NCPU + 1) / 2 ))
-    for i in $(seq 1 "$HALF"); do
-        j=$((i + HALF))
-        if [ "$j" -le "$NCPU" ]; then
-            printf "\${color 6699dd}%d\${color} \${cpubar %d,%d cpu%d} \${cpu cpu%d}%%\${goto %d}\${color 6699dd}%d\${color} \${cpubar %d,%d cpu%d} \${cpu cpu%d}%%\n" \
-                "$i" "$CBAR_H" "$CBAR_W2" "$i" "$i" "$GOTO_MID" \
-                "$j" "$CBAR_H" "$CBAR_W2" "$j" "$j" >> "$CPU_BARS_FILE"
-        else
-            printf "\${color 6699dd}%d\${color} \${cpubar %d,%d cpu%d} \${cpu cpu%d}%%\n" \
-                "$i" "$CBAR_H" "$CBAR_W2" "$i" "$i" >> "$CPU_BARS_FILE"
-        fi
+    if [ "$NCPU" -le 12 ]; then
+        COLS=2
+    else
+        COLS=$(( (NCPU + 7) / 8 ))
+    fi
+    ROWS=$(( (NCPU + COLS - 1) / COLS ))
+    PITCH=$(scale_val $(( 310 / COLS )) 40)         # distance between column starts
+    BARW=$(( PITCH - $(scale_val 67 30) ))          # label + percentage + gaps
+    [ "$BARW" -lt 12 ] && BARW=12
+    for r in $(seq 1 "$ROWS"); do
+        line=""
+        for c in $(seq 0 $((COLS - 1))); do
+            idx=$(( r + c * ROWS ))
+            [ "$idx" -le "$NCPU" ] || continue
+            [ "$c" -gt 0 ] && line="${line}\${goto $(( PITCH * c ))}"
+            line="${line}\${color 6699dd}${idx}\${color} \${cpubar ${CBAR_H},${BARW} cpu${idx}} \${cpu cpu${idx}}%"
+        done
+        echo "$line" >> "$CPU_BARS_FILE"
     done
 fi
 
