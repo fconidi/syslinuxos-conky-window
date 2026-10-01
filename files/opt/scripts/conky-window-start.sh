@@ -179,6 +179,14 @@ awk -v bars="$CPU_BARS_FILE" -v top="$TOP_ROWS_FILE" \
 }
 { print }
 ' "$CONF_SRC" > "${CONF_TMP}.tmp"
+# Above 12 threads the CPU bars take more rows: drop the TOP section (the ring
+# theme already lists the heaviest processes) so the NETWORK block stays visible.
+if [ "$NCPU" -gt 12 ]; then
+    sed -i '/__TOP_BEGIN__/,/__TOP_END__/d' "${CONF_TMP}.tmp"
+else
+    sed -i '/__TOP_BEGIN__\|__TOP_END__/d' "${CONF_TMP}.tmp"
+fi
+
 rm -f "$CPU_BARS_FILE" "$TOP_ROWS_FILE" "$GPU_ROW_FILE" "$FAN_ROW_FILE" "$HOME_ROWS_FILE" "$TEMP_ROW_FILE"
 
 # Step 2: apply scaling (placeholder trick avoids chained replacements)
