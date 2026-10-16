@@ -6,7 +6,7 @@
 
 set -euo pipefail
 
-PKG_VERSION="0.2.4"
+PKG_VERSION="0.2.5"
 PKG_NAME="syslinuxos-conky-window"
 ARCH="all"
 
